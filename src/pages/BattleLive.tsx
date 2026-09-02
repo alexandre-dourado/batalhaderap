@@ -16,21 +16,19 @@ export function BattleLive() {
 
   const data = useLiveQuery(async () => {
     const battleId = id!;
-    const events = await db.events.toArray();
-    for (const event of events) {
-      const battle = event.battles.find(b => b.id === battleId);
-      if (battle) {
-        const mcA = event.participants.find(p => p.id === battle.mcAId);
-        const mcB = event.participants.find(p => p.id === battle.mcBId);
-        return { event, battle, mcA, mcB };
-      }
-    }
-    return null;
+    const battle = await db.battles.get(battleId);
+    if (!battle) return { event: null, battle: null, mcA: null, mcB: null };
+    const event = await db.events.get(battle.eventId);
+    if (!event) return { event: null, battle: null, mcA: null, mcB: null };
+    
+    const mcA = event.participants.find(p => p.id === battle.mcAId);
+    const mcB = event.participants.find(p => p.id === battle.mcBId);
+    return { event, battle, mcA, mcB };
   }, [id]);
 
   const beats = useLiveQuery(() => db.beats.toArray(), []);
 
-  const getRoundTime = () => data?.event.settings.roundTime || 30;
+  const getRoundTime = () => data?.event?.settings.roundTime || 30;
 
   // Timer state
   const [timeLeft, setTimeLeft] = useState(30);
@@ -40,6 +38,9 @@ export function BattleLive() {
   const [judging, setJudging] = useState(false);
   const [roundStep, setRoundStep] = useState<RoundStep>('IDLE_A');
   const [countdown, setCountdown] = useState<number | null>(null);
+  
+  const [score, setScore] = useState({ A: 0, B: 0 });
+  const [history, setHistory] = useState<any[]>([]);
 
   // Beat state
   const [selectedBeat, setSelectedBeat] = useState<Beat | null>(null);
@@ -49,9 +50,17 @@ export function BattleLive() {
   const [beatObjectUrl, setBeatObjectUrl] = useState<string | null>(null);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const timerRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number>(0);
   const countdownIntervalRef = useRef<number | null>(null);
+  const fadeIntervalRef = useRef<number | null>(null);
+  const audioCtxRef = useRef<any>(null);
+
+  useEffect(() => {
+    return () => {
+      if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
+      if (audioCtxRef.current) audioCtxRef.current.close();
+    };
+  }, []);
 
   // Sync timeLeft when event loads
   useEffect(() => {
@@ -78,7 +87,10 @@ export function BattleLive() {
 
   const playBeep = () => {
     try {
-      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      if (!audioCtxRef.current) {
+        audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      }
+      const ctx = audioCtxRef.current;
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = 'sawtooth';
@@ -96,6 +108,11 @@ export function BattleLive() {
   };
 
   const fadeAudio = (toVolume: number, duration: number, callback?: () => void) => {
+    if (fadeIntervalRef.current) {
+      clearInterval(fadeIntervalRef.current);
+      fadeIntervalRef.current = null;
+    }
+
     if (!audioRef.current) {
       if (callback) callback();
       return;
@@ -111,13 +128,14 @@ export function BattleLive() {
       audioRef.current.play().then(() => setBeatPlaying(true)).catch(() => {});
     }
 
-    const interval = setInterval(() => {
+    fadeIntervalRef.current = window.setInterval(() => {
       currentStep++;
       if (audioRef.current) {
         audioRef.current.volume = Math.max(0, Math.min(1, startVol + volStep * currentStep));
       }
       if (currentStep >= steps) {
-        clearInterval(interval);
+        if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
+        fadeIntervalRef.current = null;
         if (toVolume === 0 && audioRef.current) {
           audioRef.current.pause();
           setBeatPlaying(false);
@@ -155,44 +173,47 @@ export function BattleLive() {
 
   // Timer effect
   useEffect(() => {
-    if (timerActive && timeLeft > 0) {
-      const tick = (time: number) => {
-        if (!lastTimeRef.current) lastTimeRef.current = time;
-        const delta = time - lastTimeRef.current;
-        if (delta >= 1000) {
-          setTimeLeft(prev => Math.max(0, prev - 1));
-          lastTimeRef.current = time;
-        }
-        timerRef.current = requestAnimationFrame(tick);
-      };
-      timerRef.current = requestAnimationFrame(tick);
-    } else if (timeLeft === 0 && timerActive) {
-      setTimerActive(false);
-      playBeep();
-      fadeAudio(0, 1000); // fade out over 1s
-
-      if (roundStep === 'ACTIVE_A') {
-        setRoundStep('IDLE_B');
-        setActiveMC('B');
-        setTimeLeft(getRoundTime());
-      } else if (roundStep === 'ACTIVE_B') {
-        setRoundStep('ROUND_END');
+    if (!timerActive) return;
+    let raf: number;
+    const tick = (time: number) => {
+      if (!lastTimeRef.current) lastTimeRef.current = time;
+      const delta = time - lastTimeRef.current;
+      if (delta >= 1000) {
+        lastTimeRef.current = time;
+        setTimeLeft(prev => {
+          const next = Math.max(0, prev - 1);
+          if (next === 0) {
+            setTimerActive(false);
+            playBeep();
+            fadeAudio(0, 1000);
+            setRoundStep(current =>
+              current === 'ACTIVE_A' ? 'IDLE_B' : current === 'ACTIVE_B' ? 'ROUND_END' : current
+            );
+          }
+          return next;
+        });
       }
-    }
-    return () => {
-      if (timerRef.current) cancelAnimationFrame(timerRef.current);
+      raf = requestAnimationFrame(tick);
     };
-  }, [timerActive, timeLeft, roundStep]);
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [timerActive]);
+
+  useEffect(() => {
+    if (timeLeft === 0 && !timerActive) {
+       if (roundStep === 'IDLE_B') {
+         setActiveMC('B');
+         setTimeLeft(getRoundTime());
+       }
+    }
+  }, [timeLeft, timerActive, roundStep, getRoundTime]);
 
   // Set live state on mount
   useEffect(() => {
-    if (!data) return;
-    const { event, battle } = data;
+    if (!data?.event || !data?.battle) return;
+    const { battle } = data;
     if (battle.state === 'pending' || battle.state === 'ready') {
-      const newBattles = [...event.battles];
-      const bIndex = newBattles.findIndex(b => b.id === battle.id);
-      newBattles[bIndex] = { ...battle, state: 'live' };
-      db.events.update(event.id, { battles: newBattles });
+      db.battles.update(battle.id, { state: 'live' });
     }
   }, [data]);
 
@@ -202,7 +223,7 @@ export function BattleLive() {
       <p className="font-display text-2xl animate-pulse" style={{ color: 'var(--color-gray)' }}>CARREGANDO...</p>
     </div>
   );
-  if (data === null) return (
+  if (!data || !data.event || !data.battle) return (
     <div className="flex items-center justify-center h-screen" style={{ backgroundColor: 'var(--color-background)' }}>
       <p className="font-display text-2xl" style={{ color: 'var(--color-red)' }}>BATALHA NÃO ENCONTRADA</p>
     </div>
@@ -294,18 +315,16 @@ export function BattleLive() {
       setRoundStep('IDLE_A');
       resetTimer(getRoundTime());
 
-      const newBattles = [...event.battles];
-      const bIndex = newBattles.findIndex(b => b.id === battle.id);
-      newBattles[bIndex] = { ...battle, isTiebreaker: true, state: 'tiebreaker' };
-      await db.events.update(event.id, { battles: newBattles });
+      await db.battles.update(battle.id, { isTiebreaker: true, state: 'tiebreaker' });
       return;
     }
 
     const newWinnerId = decision === 'A' ? battle.mcAId : battle.mcBId;
     if (newWinnerId) {
       stopBeat();
-      const newBattles = advanceWinner(event.battles, battle.id, newWinnerId);
-      await db.events.update(event.id, { battles: newBattles });
+      const allBattles = await db.battles.where('eventId').equals(event.id).toArray();
+      const newBattles = advanceWinner(allBattles, battle.id, newWinnerId);
+      await db.battles.bulkPut(newBattles);
       navigate(`/event/${event.id}`);
     }
   };
@@ -314,11 +333,32 @@ export function BattleLive() {
     setTimerActive(false);
     fadeAudio(0, 1000);
     setJudging(true);
+    await db.battles.update(battle.id, { state: 'judging' });
+  };
 
-    const newBattles = [...event.battles];
-    const bIndex = newBattles.findIndex(b => b.id === battle.id);
-    newBattles[bIndex] = { ...battle, state: 'judging' };
-    await db.events.update(event.id, { battles: newBattles });
+  const handleUndo = () => {
+    if (history.length === 0) return;
+    const prev = history[history.length - 1];
+    setHistory(h => h.slice(0, -1));
+    setScore(prev);
+    setRound(r => Math.max(1, r - 1));
+    setJudging(false);
+    setActiveMC('A');
+    setRoundStep('IDLE_A');
+    resetTimer(getRoundTime());
+  };
+
+  const handleReset = () => {
+    setScore({ A: 0, B: 0 });
+    setHistory([]);
+    setRound(1);
+    setJudging(false);
+    setActiveMC('A');
+    setRoundStep('IDLE_A');
+    setCountdown(null);
+    resetTimer(getRoundTime());
+    stopBeat();
+    if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
   };
 
   const hasBeats = beats && beats.length > 0;
@@ -365,8 +405,20 @@ export function BattleLive() {
             {battle.phase}
           </div>
         </div>
-        <div className="font-display text-2xl md:text-4xl uppercase text-right" style={{ color: 'var(--color-acid)' }}>
-          ROUND {round}{battle.isTiebreaker && <span style={{ color: 'var(--color-red)', fontSize: '0.6em' }}> (DESEMPATE)</span>}
+        <div className="flex flex-col items-end gap-1">
+          <div className="font-display text-2xl md:text-4xl uppercase" style={{ color: 'var(--color-acid)' }}>
+            ROUND {round}{battle.isTiebreaker && <span style={{ color: 'var(--color-red)', fontSize: '0.6em' }}> (DESEMPATE)</span>}
+          </div>
+          {/* Score HUD */}
+          <div className="flex items-center gap-3 font-display text-2xl md:text-3xl">
+            <span style={{ color: getMcColor('A'), textShadow: score.A > score.B ? `0 0 12px ${getMcColor('A')}` : 'none' }}>
+              {score.A}
+            </span>
+            <span style={{ color: 'var(--color-gray)', fontSize: '0.7em' }}>×</span>
+            <span style={{ color: getMcColor('B'), textShadow: score.B > score.A ? `0 0 12px ${getMcColor('B')}` : 'none' }}>
+              {score.B}
+            </span>
+          </div>
         </div>
       </header>
 
@@ -709,6 +761,67 @@ export function BattleLive() {
             >
               <img src="/assets/batalha/icons/icon-judge.png" alt="Julgamento" className="h-8 object-contain" style={{ filter: 'invert(1)' }} />
               JULGAMENTO
+            </button>
+          </div>
+
+          {/* Manual override buttons */}
+          <div className="mt-2 grid grid-cols-2 md:grid-cols-4 gap-2 shrink-0">
+            <button
+              onClick={() => handleVote('A')}
+              className="py-2 font-display text-xs uppercase transition-colors"
+              style={{ border: `2px solid ${getMcColor('A')}`, color: getMcColor('A') }}
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLElement).style.backgroundColor = getMcColor('A');
+                (e.currentTarget as HTMLElement).style.color = 'var(--color-background)';
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent';
+                (e.currentTarget as HTMLElement).style.color = getMcColor('A');
+              }}
+            >
+              🏆 VENCE A
+            </button>
+            <button
+              onClick={() => handleVote('B')}
+              className="py-2 font-display text-xs uppercase transition-colors"
+              style={{ border: `2px solid ${getMcColor('B')}`, color: getMcColor('B') }}
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLElement).style.backgroundColor = getMcColor('B');
+                (e.currentTarget as HTMLElement).style.color = 'var(--color-background)';
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent';
+                (e.currentTarget as HTMLElement).style.color = getMcColor('B');
+              }}
+            >
+              🏆 VENCE B
+            </button>
+            <button
+              onClick={handleUndo}
+              disabled={history.length === 0}
+              className="py-2 font-display text-xs uppercase transition-colors"
+              style={{
+                border: `2px solid ${history.length === 0 ? 'var(--color-gray)' : 'var(--color-offwhite)'}`,
+                color: history.length === 0 ? 'var(--color-gray)' : 'var(--color-offwhite)',
+                opacity: history.length === 0 ? 0.4 : 1,
+              }}
+            >
+              ⟲ UNDO
+            </button>
+            <button
+              onClick={handleReset}
+              className="py-2 font-display text-xs uppercase transition-colors"
+              style={{ border: '2px solid var(--color-red)', color: 'var(--color-red)' }}
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--color-red)';
+                (e.currentTarget as HTMLElement).style.color = 'var(--color-background)';
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent';
+                (e.currentTarget as HTMLElement).style.color = 'var(--color-red)';
+              }}
+            >
+              ↺ RESET
             </button>
           </div>
         </>
