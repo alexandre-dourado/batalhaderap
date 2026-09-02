@@ -1,0 +1,314 @@
+{
+  "source": "assets\\assets.png",
+  "canvas": {
+    "width": 1536,
+    "height": 1024
+  },
+  "asset_count": 19,
+  "assets": [
+    {
+      "id": "asset-001",
+      "file": "asset-001.png",
+      "bbox": {
+        "x": 1,
+        "y": 0,
+        "width": 628,
+        "height": 357
+      },
+      "source_bbox": {
+        "x": 13,
+        "y": 6,
+        "width": 604,
+        "height": 339
+      }
+    },
+    {
+      "id": "asset-002",
+      "file": "asset-002.png",
+      "bbox": {
+        "x": 1200,
+        "y": 11,
+        "width": 325,
+        "height": 321
+      },
+      "source_bbox": {
+        "x": 1212,
+        "y": 23,
+        "width": 301,
+        "height": 297
+      }
+    },
+    {
+      "id": "asset-003",
+      "file": "asset-003.png",
+      "bbox": {
+        "x": 630,
+        "y": 14,
+        "width": 315,
+        "height": 309
+      },
+      "source_bbox": {
+        "x": 642,
+        "y": 26,
+        "width": 291,
+        "height": 285
+      }
+    },
+    {
+      "id": "asset-004",
+      "file": "asset-004.png",
+      "bbox": {
+        "x": 942,
+        "y": 89,
+        "width": 211,
+        "height": 220
+      },
+      "source_bbox": {
+        "x": 954,
+        "y": 101,
+        "width": 187,
+        "height": 196
+      }
+    },
+    {
+      "id": "asset-005",
+      "file": "asset-005.png",
+      "bbox": {
+        "x": 1356,
+        "y": 328,
+        "width": 175,
+        "height": 197
+      },
+      "source_bbox": {
+        "x": 1368,
+        "y": 340,
+        "width": 151,
+        "height": 173
+      }
+    },
+    {
+      "id": "asset-006",
+      "file": "asset-006.png",
+      "bbox": {
+        "x": 1028,
+        "y": 332,
+        "width": 170,
+        "height": 195
+      },
+      "source_bbox": {
+        "x": 1040,
+        "y": 344,
+        "width": 146,
+        "height": 171
+      }
+    },
+    {
+      "id": "asset-007",
+      "file": "asset-007.png",
+      "bbox": {
+        "x": 1192,
+        "y": 336,
+        "width": 172,
+        "height": 197
+      },
+      "source_bbox": {
+        "x": 1204,
+        "y": 348,
+        "width": 148,
+        "height": 173
+      }
+    },
+    {
+      "id": "asset-008",
+      "file": "asset-008.png",
+      "bbox": {
+        "x": 864,
+        "y": 340,
+        "width": 169,
+        "height": 191
+      },
+      "source_bbox": {
+        "x": 876,
+        "y": 352,
+        "width": 145,
+        "height": 167
+      }
+    },
+    {
+      "id": "asset-009",
+      "file": "asset-009.png",
+      "bbox": {
+        "x": 11,
+        "y": 342,
+        "width": 856,
+        "height": 351
+      },
+      "source_bbox": {
+        "x": 23,
+        "y": 354,
+        "width": 832,
+        "height": 327
+      }
+    },
+    {
+      "id": "asset-010",
+      "file": "asset-010.png",
+      "bbox": {
+        "x": 1357,
+        "y": 513,
+        "width": 169,
+        "height": 198
+      },
+      "source_bbox": {
+        "x": 1369,
+        "y": 525,
+        "width": 145,
+        "height": 174
+      }
+    },
+    {
+      "id": "asset-011",
+      "file": "asset-011.png",
+      "bbox": {
+        "x": 863,
+        "y": 518,
+        "width": 170,
+        "height": 183
+      },
+      "source_bbox": {
+        "x": 875,
+        "y": 530,
+        "width": 146,
+        "height": 159
+      }
+    },
+    {
+      "id": "asset-012",
+      "file": "asset-012.png",
+      "bbox": {
+        "x": 1027,
+        "y": 522,
+        "width": 172,
+        "height": 179
+      },
+      "source_bbox": {
+        "x": 1039,
+        "y": 534,
+        "width": 148,
+        "height": 155
+      }
+    },
+    {
+      "id": "asset-013",
+      "file": "asset-013.png",
+      "bbox": {
+        "x": 1190,
+        "y": 524,
+        "width": 175,
+        "height": 179
+      },
+      "source_bbox": {
+        "x": 1202,
+        "y": 536,
+        "width": 151,
+        "height": 155
+      }
+    },
+    {
+      "id": "asset-014",
+      "file": "asset-014.png",
+      "bbox": {
+        "x": 0,
+        "y": 689,
+        "width": 945,
+        "height": 329
+      },
+      "source_bbox": {
+        "x": 8,
+        "y": 701,
+        "width": 925,
+        "height": 305
+      }
+    },
+    {
+      "id": "asset-015",
+      "file": "asset-015.png",
+      "bbox": {
+        "x": 1444,
+        "y": 697,
+        "width": 68,
+        "height": 295
+      },
+      "source_bbox": {
+        "x": 1456,
+        "y": 709,
+        "width": 44,
+        "height": 271
+      }
+    },
+    {
+      "id": "asset-016",
+      "file": "asset-016.png",
+      "bbox": {
+        "x": 1376,
+        "y": 698,
+        "width": 76,
+        "height": 315
+      },
+      "source_bbox": {
+        "x": 1388,
+        "y": 710,
+        "width": 52,
+        "height": 291
+      }
+    },
+    {
+      "id": "asset-017",
+      "file": "asset-017.png",
+      "bbox": {
+        "x": 1313,
+        "y": 704,
+        "width": 74,
+        "height": 309
+      },
+      "source_bbox": {
+        "x": 1325,
+        "y": 716,
+        "width": 50,
+        "height": 285
+      }
+    },
+    {
+      "id": "asset-018",
+      "file": "asset-018.png",
+      "bbox": {
+        "x": 981,
+        "y": 714,
+        "width": 326,
+        "height": 146
+      },
+      "source_bbox": {
+        "x": 993,
+        "y": 726,
+        "width": 302,
+        "height": 122
+      }
+    },
+    {
+      "id": "asset-019",
+      "file": "asset-019.png",
+      "bbox": {
+        "x": 978,
+        "y": 843,
+        "width": 313,
+        "height": 156
+      },
+      "source_bbox": {
+        "x": 990,
+        "y": 855,
+        "width": 289,
+        "height": 132
+      }
+    }
+  ]
+}

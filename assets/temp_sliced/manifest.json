@@ -1,0 +1,26 @@
+{
+  "source": "assets\\assets.png",
+  "canvas": {
+    "width": 1536,
+    "height": 1024
+  },
+  "asset_count": 1,
+  "assets": [
+    {
+      "id": "asset-001",
+      "file": "asset-001.png",
+      "bbox": {
+        "x": 0,
+        "y": 0,
+        "width": 1533,
+        "height": 1020
+      },
+      "source_bbox": {
+        "x": 8,
+        "y": 6,
+        "width": 1513,
+        "height": 1002
+      }
+    }
+  ]
+}

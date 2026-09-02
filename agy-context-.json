@@ -1,0 +1,84 @@
+{
+  "project": "BATALHA RAP",
+  "description": "MVP offline-first de app para organização de batalhas de rap freestyle 1v1",
+  "stack": "React 18 + TypeScript + Vite + Tailwind CSS v4 + Dexie.js + PWA",
+  "change_log": [
+    {
+      "date": "2026-09-01",
+      "session": "Sessão 01 — Scaffold & MVP",
+      "changes": [
+        "Projeto iniciado do zero com Vite + React + TypeScript",
+        "Design System brutalista (preto, off-white, vermelho, amarelo ácido) via Tailwind v4 @theme",
+        "Persistência offline-first via Dexie.js (IndexedDB) para Events e Beats",
+        "Tournament Engine: generateBracket (4-64 participantes), advanceWinner",
+        "Páginas criadas: Home, CreateEvent, EventSetup, BracketView, BattleLive, BeatsLibrary, LiveScreen",
+        "PWA configurado via vite-plugin-pwa (service worker + manifest)",
+        "Exportação e importação de evento em JSON",
+        "Botão CARREGAR DEMO com 16 MCs fictícios"
+      ]
+    },
+    {
+      "date": "2026-09-01",
+      "session": "Sessão 02 — Bugfix & Revisão Completa",
+      "changes": [
+        "BUGFIX CRÍTICO: useEffect em BattleLive estava após early returns — violação Rules of Hooks causava crash ao abrir qualquer batalha",
+        "Todos os hooks movidos para antes de qualquer return condicional",
+        "Todos os arquivos de página revisados e reescritos com CSS variables diretas (compatibilidade Tailwind v4)",
+        "BracketView: indicadores de status (PRONTA/AGUARDANDO/FINALIZADA), batalhas finalizadas não clicáveis",
+        "BattleLive: barra de progresso no timer, hover states corretos, guards internos nos effects",
+        "LiveScreen: tipografia responsiva via clamp()",
+        "Build final: ✓ 36 módulos transformados, PWA precache 5 entries"
+      ]
+    },
+    {
+      "date": "2026-09-01",
+      "session": "Sessão 03 — Beat Player na Batalha",
+      "changes": [
+        "BattleLive: seletor de beat embutido com modal de seleção da biblioteca local",
+        "Player compacto com play/pause, stop, troca de beat e controle de volume",
+        "Beat em loop automático durante os rounds",
+        "Beat para automaticamente ao abrir julgamento ou declarar vencedor",
+        "Botão contextual: 'ESCOLHER BEAT' (se há beats) ou '⚠ IMPORTAR BEAT' (se vazio)",
+        "Build: ✓ 36 módulos, code 0"
+      ]
+    },
+    {
+      "date": "2026-09-01",
+      "session": "Sessão 04 — Beats de Fábrica e Deploy Vercel",
+      "changes": [
+        "Conversão de 15 beats originais (WAV e MP3) para Opus 96kbps usando FFmpeg local",
+        "Tamanho total reduzido de ~200MB para ~38MB, servidos da pasta estática public/beats/",
+        "Criado sistema inteligente de seed (seedBeats.ts) rodando no boot do app (main.tsx)",
+        "O seed baixa silenciosamente os beats estáticos na primeira carga e popula o IndexedDB",
+        "Criado .vercelignore ignorando a pasta com os beats raw para não subir peso desnecessário",
+        "Deploy efetuado no Vercel (batalha-rho.vercel.app)"
+      ]
+    },
+    {
+      "date": "2026-09-01",
+      "session": "Sessão 05 — Extração de Assets Automática",
+      "changes": [
+        "Escrito script Python local para analisar a imagem assets/assets.png usando bounding boxes manuais.",
+        "Assets recortados diretamente com alpha transparency para public/assets/ (16 imagens úteis).",
+        "Index.html: Atualizado favicon para o ícone 192px.",
+        "Index.html: Atualizada tag OpenGraph og:image apontando para og-image.png absolutos no vercel.",
+        "vite.config.ts: Configurado o novo PWA manifest com icons 192 e 512px.",
+        "Home.tsx: Header agora utiliza a imagem do logo principal.",
+        "BracketView.tsx: Botões de navegação e telão receberam ícones correspondentes.",
+        "BattleLive.tsx: Mesa de controle substituída com os botões originais da arte (play, pause, stop, swap, dice, alternar mc, judge, check).",
+        "Nova build, código limpo, e deploy executado pro Vercel."
+      ]
+    },
+    {
+      "date": "2026-09-01",
+      "session": "Fase 3 - Setup de Evento Avançado",
+      "changes": [
+        "Atualizado EventSettings (TournamentSettings) para incluir roundTime",
+        "Atualizado Participant para incluir color (red/blue/random)",
+        "Suporte a chaveamento manual na geração do campeonato (generateBracket suportando BYEs e preenchimento de nulos)",
+        "EventSetup.tsx reescrito para incluir seletor de tempo do round e toggle para modo Manual",
+        "Criação de interface para parear os MCs manualmente, arrastando-os para os slots correspondentes antes de iniciar o campeonato"
+      ]
+    }
+  ]
+}
