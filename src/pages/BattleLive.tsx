@@ -336,11 +336,21 @@ export function BattleLive() {
     await db.battles.update(battle.id, { state: 'judging' });
   };
 
+  const handleManualScore = (mc: 'A' | 'B') => {
+    setHistory(prev => [...prev, score]);
+    setScore(prev => ({ ...prev, [mc]: prev[mc] + 1 }));
+    setRound(prev => prev + 1);
+    setJudging(false);
+    setActiveMC('A');
+    setRoundStep('IDLE_A');
+    resetTimer(getRoundTime());
+  };
+
   const handleUndo = () => {
     if (history.length === 0) return;
-    const prev = history[history.length - 1];
+    const prevScore = history[history.length - 1];
     setHistory(h => h.slice(0, -1));
-    setScore(prev);
+    setScore(prevScore);
     setRound(r => Math.max(1, r - 1));
     setJudging(false);
     setActiveMC('A');
@@ -767,7 +777,7 @@ export function BattleLive() {
           {/* Manual override buttons */}
           <div className="mt-2 grid grid-cols-2 md:grid-cols-4 gap-2 shrink-0">
             <button
-              onClick={() => handleVote('A')}
+              onClick={() => handleManualScore('A')}
               className="py-2 font-display text-xs uppercase transition-colors"
               style={{ border: `2px solid ${getMcColor('A')}`, color: getMcColor('A') }}
               onMouseEnter={e => {
@@ -782,7 +792,7 @@ export function BattleLive() {
               🏆 VENCE A
             </button>
             <button
-              onClick={() => handleVote('B')}
+              onClick={() => handleManualScore('B')}
               className="py-2 font-display text-xs uppercase transition-colors"
               style={{ border: `2px solid ${getMcColor('B')}`, color: getMcColor('B') }}
               onMouseEnter={e => {

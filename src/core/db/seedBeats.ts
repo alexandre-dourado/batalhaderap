@@ -125,7 +125,7 @@ const FACTORY_BEATS = [
   { id: "factory_beat_122", name: "untouchable", file: "/beats/untouchable.opus" },
 ];
 
-const SEED_KEY = 'batalha_factory_beats_v5';
+const SEED_KEY = 'batalha_factory_beats_v6';
 
 export async function seedFactoryBeats(): Promise<void> {
   // Runs only once per device
@@ -137,7 +137,8 @@ export async function seedFactoryBeats(): Promise<void> {
       const existing = await db.beats.get(beat.id);
       if (existing) continue;
 
-      const res = await fetch(beat.file);
+      const encodedUrl = encodeURI(beat.file).replace(/#/g, '%23').replace(/\?/g, '%3F');
+      const res = await fetch(encodedUrl);
       if (!res.ok) {
         console.warn(`[BATALHA] Beat não encontrado: ${beat.file}`);
         continue;
