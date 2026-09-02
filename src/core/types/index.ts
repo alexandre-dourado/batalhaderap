@@ -8,7 +8,8 @@ export interface Participant {
   id: string;
   name: string;
   seed: number;
-  color?: 'red' | 'blue' | 'random';
+  color?: string; // Hex color for UI
+  avatar?: string; // URL, base64 or character ID
 }
 
 export interface Vote {
@@ -38,7 +39,6 @@ export interface TournamentEvent {
   date?: number;
   settings: TournamentSettings;
   participants: Participant[];
-  battles: Battle[];
   state: 'setup' | 'active' | 'finished';
   createdAt: number;
   randomSeed?: number;

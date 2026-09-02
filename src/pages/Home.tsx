@@ -19,13 +19,14 @@ export function Home() {
     }));
 
     const battles = generateBracket(demoId, participants);
-
+    
+    await db.battles.bulkAdd(battles);
     await db.events.add({
       id: demoId,
-      name: 'BATALHA DA PRAÇA #01 (DEMO)',
-      settings: { participantsCount: 16, format: '1v1' },
-      participants,
-      battles,
+      name: 'Batalha Demo',
+      date: Date.now(),
+      settings: { participantsCount: 16, roundTime: 45, format: '1v1' },
+      participants: participants as any,
       state: 'active',
       createdAt: Date.now()
     });
@@ -139,6 +140,7 @@ export function Home() {
                 <button
                   onClick={async () => {
                     if (confirm(`Excluir "${ev.name}"? Esta ação não pode ser desfeita.`)) {
+                      await db.battles.where('eventId').equals(ev.id).delete();
                       await db.events.delete(ev.id);
                     }
                   }}

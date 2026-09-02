@@ -71,8 +71,9 @@ export function generateBracket(eventId: string, participants: (Participant | nu
           battle.winnerId = battle.mcBId;
           battle.state = 'finished';
         } else {
-          // Both null? Shouldn't happen ideally, but if so, it's a finished ghost match
-          battle.state = 'finished';
+          // Ghost match: both null
+          // Do not mark as finished to avoid passing null upward
+          battle.state = 'pending';
         }
       }
       

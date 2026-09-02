@@ -1,21 +1,36 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../core/db/db';
 import { generateBracket } from '../core/engine/tournament';
 import type { Participant } from '../core/types';
 
+const COLORS = ['#FFF500', '#00FF00', '#0000FF', '#FF0000', '#FF00FF', '#FFFFFF'];
+
+type ParticipantDraft = {
+  id: string;
+  name: string;
+  color: string;
+  avatar: string;
+};
+
 export function EventSetup() {
   const { id } = useParams();
   const navigate = useNavigate();
   const event = useLiveQuery(() => db.events.get(id!));
 
-  const [textList, setTextList] = useState('');
+  const [drafts, setDrafts] = useState<ParticipantDraft[]>([]);
+  const [inputText, setInputText] = useState('');
+  
   const [bracketMode, setBracketMode] = useState<'random' | 'manual'>('random');
   const [roundTime, setRoundTime] = useState<number>(30);
   
   const [step, setStep] = useState<'input' | 'manual_pairing'>('input');
   const [manualPairs, setManualPairs] = useState<string[]>([]);
+  
+  // Avatar Modal State
+  const [editingDraftId, setEditingDraftId] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (event === undefined) return (
     <div className="flex items-center justify-center h-screen">
@@ -29,18 +44,72 @@ export function EventSetup() {
   );
 
   const targetCount = event.settings.participantsCount;
-  const currentLines = textList.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-  const remaining = targetCount - currentLines.length;
-  const isReady = currentLines.length <= targetCount && currentLines.length > 1; 
-  const isOver = currentLines.length > targetCount;
+  const remaining = targetCount - drafts.length;
+  const isReady = drafts.length <= targetCount && drafts.length > 1; 
+  const isOver = drafts.length > targetCount;
+
+  const handleAddNames = (names: string[]) => {
+    const newDrafts = names.map((n, i) => ({
+      id: `draft_${Date.now()}_${i}`,
+      name: n,
+      color: COLORS[Math.floor(Math.random() * COLORS.length)],
+      avatar: `/assets/characters/${Math.floor(Math.random() * 8) + 1}.png`
+    }));
+    setDrafts(prev => [...prev, ...newDrafts]);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && inputText.trim()) {
+      handleAddNames([inputText.trim().toUpperCase()]);
+      setInputText('');
+    }
+  };
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    const pastedText = e.clipboardData.getData('text');
+    const names = pastedText.split('\n').map(n => n.trim().toUpperCase()).filter(n => n.length > 0);
+    handleAddNames(names);
+  };
+
+  const removeDraft = (id: string) => {
+    setDrafts(prev => prev.filter(d => d.id !== id));
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && editingDraftId) {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const base64 = ev.target?.result as string;
+        setDrafts(prev => prev.map(d => d.id === editingDraftId ? { ...d, avatar: base64 } : d));
+        setEditingDraftId(null);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const selectGenericAvatar = (num: number) => {
+    if (editingDraftId) {
+      setDrafts(prev => prev.map(d => d.id === editingDraftId ? { ...d, avatar: `/assets/characters/${num}.png` } : d));
+      setEditingDraftId(null);
+    }
+  };
+
+  function hasGhostPair(slots: string[], targetCount: number): boolean {
+    for (let i = 0; i < targetCount; i += 2) {
+      if (!slots[i] && !slots[i + 1]) return true;
+    }
+    return false;
+  }
 
   const handleGoToPairing = () => {
     if (isOver) {
       alert(`O limite é ${targetCount} participantes.`);
       return;
     }
-    const uniqueNames = [...new Set(currentLines.map(n => n.toUpperCase()))];
-    if (uniqueNames.length !== currentLines.length) {
+    const uniqueNames = [...new Set(drafts.map(d => d.name))];
+    if (uniqueNames.length !== drafts.length) {
       alert(`Nomes duplicados encontrados. Verifique a lista.`);
       return;
     }
@@ -49,32 +118,36 @@ export function EventSetup() {
   };
 
   const handleStartTournament = async (finalNames: string[]) => {
+    if (hasGhostPair(finalNames, targetCount)) {
+      alert("Reorganize os nomes — dois slots vazios não podem se enfrentar diretamente (Ghost Match).");
+      return;
+    }
+
     const participants: (Participant | null)[] = [];
     
     for (let i = 0; i < targetCount; i++) {
       const name = finalNames[i];
       if (name) {
+        const draft = drafts.find(d => d.name === name);
         participants.push({
           id: `mc_${i}_${Date.now()}`,
           name,
-          seed: i
+          seed: i,
+          color: draft?.color,
+          avatar: draft?.avatar
         });
       } else {
         participants.push(null);
       }
     }
 
-    const updatedSettings = {
-      ...event.settings,
-      roundTime
-    };
-
+    const updatedSettings = { ...event.settings, roundTime };
     const battles = generateBracket(event.id, participants);
 
+    await db.battles.bulkAdd(battles);
     await db.events.update(event.id, {
       settings: updatedSettings,
       participants: participants.filter(Boolean) as Participant[],
-      battles,
       state: 'active'
     });
 
@@ -86,36 +159,49 @@ export function EventSetup() {
       alert(`O limite é ${targetCount} participantes.`);
       return;
     }
-    const uniqueNames = [...new Set(currentLines.map(n => n.toUpperCase()))];
-    if (uniqueNames.length !== currentLines.length) {
-      alert(`Nomes duplicados encontrados. Verifique a lista.`);
+    const uniqueNames = [...new Set(drafts.map(d => d.name))];
+    if (uniqueNames.length !== drafts.length) {
+      alert(`Nomes duplicados encontrados.`);
       return;
     }
     
-    const shuffled = [...uniqueNames].sort(() => Math.random() - 0.5);
-    while (shuffled.length < targetCount) {
-      shuffled.push('');
+    let shuffled: string[] = [];
+    let attempts = 0;
+    let valid = false;
+
+    while (!valid && attempts < 100) {
+      shuffled = [...uniqueNames].sort(() => Math.random() - 0.5);
+      while (shuffled.length < targetCount) {
+        shuffled.push('');
+      }
+      valid = !hasGhostPair(shuffled, targetCount);
+      attempts++;
     }
+
+    if (!valid) {
+      alert("Erro ao sortear: não foi possível gerar chaves válidas sem confrontos vazios.");
+      return;
+    }
+
     handleStartTournament(shuffled);
   };
 
   const getCounterColor = () => {
-    if (isReady && currentLines.length === targetCount) return 'var(--color-acid)';
-    if (isReady && currentLines.length < targetCount) return 'var(--color-offwhite)';
+    if (isReady && drafts.length === targetCount) return 'var(--color-acid)';
+    if (isReady && drafts.length < targetCount) return 'var(--color-offwhite)';
     if (isOver) return 'var(--color-red)';
     return 'var(--color-gray)';
   };
 
   const getStatusLabel = () => {
-    if (isReady && currentLines.length === targetCount) return 'COMPLETO';
-    if (isReady && currentLines.length < targetCount) return `FALTAM ${remaining} (BYEs GERADOS)`;
+    if (isReady && drafts.length === targetCount) return 'COMPLETO';
+    if (isReady && drafts.length < targetCount) return `FALTAM ${remaining} (BYEs GERADOS)`;
     if (isOver) return `${Math.abs(remaining)} A MAIS`;
-    return 'DIGITE OS NOMES';
+    return 'ADICIONE OS NOMES';
   };
 
   if (step === 'manual_pairing') {
-    const uniqueNames = [...new Set(currentLines.map(n => n.toUpperCase()))];
-    const available = uniqueNames.filter(n => !manualPairs.includes(n));
+    const available = drafts.map(d => d.name).filter(n => !manualPairs.includes(n));
     const isPairingComplete = available.length === 0;
 
     const handlePoolClick = (name: string) => {
@@ -187,15 +273,11 @@ export function EventSetup() {
                   onClick={() => handlePoolClick(mc)}
                   className="px-4 py-2 font-display text-lg uppercase transition-colors"
                   style={{ backgroundColor: 'var(--color-background)', border: '2px solid var(--color-acid)', color: 'var(--color-acid)' }}
-                  onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--color-acid)'; e.currentTarget.style.color = 'var(--color-background)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'var(--color-background)'; e.currentTarget.style.color = 'var(--color-acid)'; }}
                 >
                   {mc}
                 </button>
               ))}
-              {available.length === 0 && <p className="text-sm text-gray-500 my-auto mx-auto" style={{ color: 'var(--color-gray)' }}>TODOS ALOCADOS</p>}
             </div>
-            <p className="text-sm" style={{ color: 'var(--color-gray)' }}>Clique em um MC para alocá-lo na próxima vaga disponível.</p>
           </div>
 
           <div className="w-full lg:w-2/3">
@@ -208,15 +290,9 @@ export function EventSetup() {
                   <button
                     onClick={() => m.mcA && handleSlotClick(m.idxA)}
                     className="w-full text-left px-4 py-3 font-display text-xl uppercase transition-colors flex justify-between items-center"
-                    style={{
-                      border: '2px solid',
-                      borderColor: m.mcA ? 'var(--color-offwhite)' : 'var(--color-gray)',
-                      color: m.mcA ? 'var(--color-offwhite)' : 'var(--color-gray)',
-                      cursor: m.mcA ? 'pointer' : 'default'
-                    }}
+                    style={{ border: '2px solid', borderColor: m.mcA ? 'var(--color-offwhite)' : 'var(--color-gray)' }}
                   >
                     <span>{m.mcA || '--- VAZIO (BYE) ---'}</span>
-                    {m.mcA && <span className="text-xs">✕</span>}
                   </button>
 
                   <div className="text-center font-display text-xs" style={{ color: 'var(--color-acid)' }}>VS</div>
@@ -224,15 +300,9 @@ export function EventSetup() {
                   <button
                     onClick={() => m.mcB && handleSlotClick(m.idxB)}
                     className="w-full text-left px-4 py-3 font-display text-xl uppercase transition-colors flex justify-between items-center"
-                    style={{
-                      border: '2px solid',
-                      borderColor: m.mcB ? 'var(--color-offwhite)' : 'var(--color-gray)',
-                      color: m.mcB ? 'var(--color-offwhite)' : 'var(--color-gray)',
-                      cursor: m.mcB ? 'pointer' : 'default'
-                    }}
+                    style={{ border: '2px solid', borderColor: m.mcB ? 'var(--color-offwhite)' : 'var(--color-gray)' }}
                   >
                     <span>{m.mcB || '--- VAZIO (BYE) ---'}</span>
-                    {m.mcB && <span className="text-xs">✕</span>}
                   </button>
                 </div>
               ))}
@@ -253,8 +323,6 @@ export function EventSetup() {
           onClick={() => navigate('/')}
           className="mb-8 text-sm font-display tracking-widest uppercase self-start"
           style={{ color: 'var(--color-gray)' }}
-          onMouseEnter={e => (e.target as HTMLElement).style.color = 'var(--color-offwhite)'}
-          onMouseLeave={e => (e.target as HTMLElement).style.color = 'var(--color-gray)'}
         >
           ← Início
         </button>
@@ -321,24 +389,47 @@ export function EventSetup() {
 
         <label className="block font-display text-2xl mb-2">LISTA DE MCs</label>
         <p className="mb-4 text-sm" style={{ color: 'var(--color-gray)' }}>
-          Um nome por linha. Caso o número de MCs seja menor que {targetCount}, chaves automáticas com "BYE" serão geradas.
+          Digite o nome e pressione Enter, ou cole uma lista. Clique na foto para alterar.
         </p>
 
-        <textarea
-          value={textList}
-          onChange={e => setTextList(e.target.value)}
-          className="flex-1 min-h-96 font-body uppercase text-xl resize-none"
-          placeholder={'Ex:\nNEO\nKADU\nL7\nSHARK'}
-          style={{
-            backgroundColor: 'var(--color-background)',
-            border: '2px solid var(--color-gray)',
-            padding: '1rem',
-            color: 'var(--color-offwhite)',
-            outline: 'none',
-          }}
-          onFocus={e => (e.target as HTMLElement).style.borderColor = 'var(--color-acid)'}
-          onBlur={e => (e.target as HTMLElement).style.borderColor = 'var(--color-gray)'}
-        />
+        <div className="flex flex-col gap-4 mb-4">
+          <input 
+            type="text" 
+            value={inputText}
+            onChange={e => setInputText(e.target.value)}
+            onKeyDown={handleKeyDown}
+            onPaste={handlePaste}
+            placeholder="Adicionar MC..."
+            className="font-display text-2xl p-4 uppercase w-full"
+            style={{ backgroundColor: 'var(--color-background)', border: '2px solid var(--color-gray)', color: 'var(--color-offwhite)', outline: 'none' }}
+          />
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+          {drafts.map(draft => (
+            <div key={draft.id} className="flex flex-col items-center p-2 relative" style={{ border: `2px solid ${draft.color}` }}>
+              <button 
+                onClick={() => removeDraft(draft.id)}
+                className="absolute top-1 right-1 text-xs w-6 h-6 flex items-center justify-center"
+                style={{ backgroundColor: 'var(--color-red)', color: 'var(--color-offwhite)' }}
+              >X</button>
+              <div 
+                className="w-20 h-20 bg-gray-800 rounded-full mb-2 cursor-pointer overflow-hidden border-2" 
+                style={{ borderColor: draft.color }}
+                onClick={() => setEditingDraftId(draft.id)}
+              >
+                <img 
+                  src={draft.avatar} 
+                  alt="avatar" 
+                  className="w-full h-full object-cover" 
+                  style={{ filter: draft.avatar.includes('characters') ? 'grayscale(100%)' : 'none' }} 
+                />
+              </div>
+              <span className="font-display uppercase text-lg truncate w-full text-center" style={{ color: draft.color }}>{draft.name}</span>
+            </div>
+          ))}
+        </div>
+
       </div>
 
       <div className="w-full md:w-80 flex flex-col justify-end gap-6">
@@ -347,7 +438,7 @@ export function EventSetup() {
           style={{ border: '2px solid var(--color-gray)' }}
         >
           <div className="font-display mb-2" style={{ fontSize: '4rem', lineHeight: 1 }}>
-            <span style={{ color: isOver ? 'var(--color-red)' : 'var(--color-offwhite)' }}>{currentLines.length}</span>
+            <span style={{ color: isOver ? 'var(--color-red)' : 'var(--color-offwhite)' }}>{drafts.length}</span>
             <span style={{ fontSize: '2rem', color: 'var(--color-gray)' }}> / {targetCount}</span>
           </div>
           <div
@@ -369,8 +460,6 @@ export function EventSetup() {
               border: `2px solid ${isReady ? 'var(--color-acid)' : 'var(--color-gray)'}`,
               cursor: isReady ? 'pointer' : 'not-allowed',
             }}
-            onMouseEnter={e => { if (isReady) (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--color-offwhite)'; }}
-            onMouseLeave={e => { if (isReady) (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--color-acid)'; }}
           >
             SORTEAR CHAVES
           </button>
@@ -385,13 +474,41 @@ export function EventSetup() {
               border: `2px solid ${isReady ? 'var(--color-acid)' : 'var(--color-gray)'}`,
               cursor: isReady ? 'pointer' : 'not-allowed',
             }}
-            onMouseEnter={e => { if (isReady) (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--color-offwhite)'; }}
-            onMouseLeave={e => { if (isReady) (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--color-acid)'; }}
           >
             MONTAR CHAVES
           </button>
         )}
       </div>
+
+      {editingDraftId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.9)' }}>
+          <div className="w-full max-w-2xl p-6 flex flex-col gap-6" style={{ backgroundColor: 'var(--color-background)', border: '2px solid var(--color-acid)' }}>
+            <div className="flex justify-between items-center">
+              <h2 className="font-display text-2xl" style={{ color: 'var(--color-acid)' }}>ESCOLHER PERSONAGEM</h2>
+              <button onClick={() => setEditingDraftId(null)} className="font-display text-2xl text-gray-400">X</button>
+            </div>
+            
+            <div className="grid grid-cols-4 gap-4">
+              {[1,2,3,4,5,6,7,8].map(num => (
+                <button key={num} onClick={() => selectGenericAvatar(num)} className="border-2 border-gray-600 hover:border-white p-2">
+                  <img src={`/assets/characters/${num}.png`} alt={`char-${num}`} className="w-full h-auto grayscale" />
+                </button>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-4 pt-4" style={{ borderTop: '2px solid var(--color-gray)' }}>
+              <span className="font-display">OU ENVIAR FOTO:</span>
+              <input type="file" accept="image/*" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
+              <button 
+                onClick={() => fileInputRef.current?.click()}
+                className="px-4 py-2 font-display uppercase border-2 border-white hover:bg-white hover:text-black transition-colors"
+              >
+                UPLOAD DA CÂMERA / ARQUIVO
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

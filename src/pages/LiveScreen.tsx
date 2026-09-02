@@ -7,13 +7,14 @@ export function LiveScreen() {
 
   const data = useLiveQuery(async () => {
     const event = await db.events.get(id!);
-    if (!event) return null;
-
-    const activeBattle = event.battles.find(b =>
+    if (!event) return { event: null, battles: [] };
+    const battles = await db.battles.where('eventId').equals(id!).toArray();
+    
+    const activeBattle = battles.find(b =>
       b.state === 'live' || b.state === 'judging' || b.state === 'tiebreaker'
     );
 
-    if (!activeBattle) return { event, battle: null, mcA: null, mcB: null };
+    if (!activeBattle) return { event, battles, battle: null, mcA: null, mcB: null };
 
     const mcA = event.participants.find(p => p.id === activeBattle.mcAId);
     const mcB = event.participants.find(p => p.id === activeBattle.mcBId);
@@ -26,7 +27,7 @@ export function LiveScreen() {
       <p className="font-display text-4xl animate-pulse" style={{ color: 'var(--color-gray)' }}>CARREGANDO...</p>
     </div>
   );
-  if (data === null) return (
+  if (!data?.event) return (
     <div className="h-screen w-screen flex items-center justify-center" style={{ backgroundColor: 'var(--color-background)' }}>
       <p className="font-display text-4xl" style={{ color: 'var(--color-red)' }}>EVENTO NÃO ENCONTRADO</p>
     </div>

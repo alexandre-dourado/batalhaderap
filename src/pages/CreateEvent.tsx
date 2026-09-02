@@ -22,7 +22,6 @@ export function CreateEvent() {
       city,
       settings,
       participants: [],
-      battles: [],
       state: 'setup',
       createdAt: Date.now()
     });
