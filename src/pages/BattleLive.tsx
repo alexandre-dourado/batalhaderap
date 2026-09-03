@@ -420,16 +420,9 @@ export function BattleLive() {
 
   const hasBeats = beats && beats.length > 0;
 
-  // Colors based on colors from participant, fallback to Acid for A and Offwhite for B if not specified.
-  
-  // Custom CSS colors injected for blue since it's not in the original palette, or we just map it.
-  // Actually, we don't have --color-blue defined in index.css yet!
-  // I will use hex for blue to be safe, or assume standard colors.
   const getMcColor = (mcKey: 'A' | 'B') => {
     const mc = mcKey === 'A' ? mcA : mcB;
-    if (mc?.color === 'red') return '#FF3030';
-    if (mc?.color === 'blue') return '#3050FF';
-    return mcKey === 'A' ? 'var(--color-acid)' : 'var(--color-offwhite)';
+    return mc?.color || (mcKey === 'A' ? 'var(--color-acid)' : 'var(--color-offwhite)');
   };
 
   const currentMcColor = getMcColor(activeMC);
@@ -552,13 +545,15 @@ export function BattleLive() {
               }}
             >
               <div
-                className="flex-1 flex items-center justify-center font-display uppercase p-4 text-center break-words"
+                className="flex-1 flex flex-col items-center justify-center font-display uppercase p-4 text-center break-words"
                 style={{
-                  fontSize: 'clamp(2.5rem, 7vw, 6rem)',
                   color: activeMC === 'A' ? getMcColor('A') : 'var(--color-gray)'
                 }}
               >
-                {mcA?.name || '?'}
+                {mcA?.avatar && (
+                  <img src={mcA.avatar} alt="avatar" className="w-32 h-32 md:w-48 md:h-48 object-cover mb-4 border-4" style={{ borderColor: getMcColor('A') }} />
+                )}
+                <span style={{ fontSize: 'clamp(2.5rem, 7vw, 6rem)', lineHeight: 1 }}>{mcA?.name || '?'}</span>
               </div>
               {activeMC === 'A' && (
                 <div className="font-display text-xl p-3 text-center" style={{ backgroundColor: getMcColor('A'), color: 'var(--color-background)' }}>
@@ -760,13 +755,15 @@ export function BattleLive() {
               }}
             >
               <div
-                className="flex-1 flex items-center justify-center font-display uppercase p-4 text-center break-words"
+                className="flex-1 flex flex-col items-center justify-center font-display uppercase p-4 text-center break-words"
                 style={{
-                  fontSize: 'clamp(2.5rem, 7vw, 6rem)',
                   color: activeMC === 'B' ? getMcColor('B') : 'var(--color-gray)'
                 }}
               >
-                {mcB?.name || '?'}
+                {mcB?.avatar && (
+                  <img src={mcB.avatar} alt="avatar" className="w-32 h-32 md:w-48 md:h-48 object-cover mb-4 border-4" style={{ borderColor: getMcColor('B') }} />
+                )}
+                <span style={{ fontSize: 'clamp(2.5rem, 7vw, 6rem)', lineHeight: 1 }}>{mcB?.name || '?'}</span>
               </div>
               {activeMC === 'B' && (
                 <div className="font-display text-xl p-3 text-center" style={{ backgroundColor: getMcColor('B'), color: 'var(--color-background)' }}>

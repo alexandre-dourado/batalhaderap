@@ -5,7 +5,16 @@ import { db } from '../core/db/db';
 import { generateBracket } from '../core/engine/tournament';
 import type { Participant } from '../core/types';
 
-const COLORS = ['#FFF500', '#00FF00', '#0000FF', '#FF0000', '#FF00FF', '#FFFFFF'];
+const PALETTE = [
+  '#FF3030', // Red
+  '#F5E600', // Acid Yellow
+  '#00F0FF', // Cyber Blue
+  '#39FF14', // Toxic Green
+  '#FF00FF', // Hot Pink
+  '#FF8C00', // Orange
+  '#9D00FF', // Purple
+  '#FFFFFF'  // White
+];
 
 type ParticipantDraft = {
   id: string;
@@ -49,12 +58,16 @@ export function EventSetup() {
   const isOver = drafts.length > targetCount;
 
   const handleAddNames = (names: string[]) => {
-    const newDrafts = names.map((n, i) => ({
-      id: `draft_${Date.now()}_${i}`,
-      name: n,
-      color: COLORS[Math.floor(Math.random() * COLORS.length)],
-      avatar: `/assets/characters/${Math.floor(Math.random() * 8) + 1}.png`
-    }));
+    const startIndex = drafts.length;
+    const newDrafts = names.map((n, i) => {
+      const idx = startIndex + i;
+      return {
+        id: `draft_${Date.now()}_${i}`,
+        name: n,
+        color: PALETTE[idx % PALETTE.length],
+        avatar: `/assets/characters/${(idx % 8) + 1}.webp`
+      };
+    });
     setDrafts(prev => [...prev, ...newDrafts]);
   };
 
@@ -91,7 +104,7 @@ export function EventSetup() {
 
   const selectGenericAvatar = (num: number) => {
     if (editingDraftId) {
-      setDrafts(prev => prev.map(d => d.id === editingDraftId ? { ...d, avatar: `/assets/characters/${num}.png` } : d));
+      setDrafts(prev => prev.map(d => d.id === editingDraftId ? { ...d, avatar: `/assets/characters/${num}.webp` } : d));
       setEditingDraftId(null);
     }
   };
@@ -422,7 +435,6 @@ export function EventSetup() {
                   src={draft.avatar} 
                   alt="avatar" 
                   className="w-full h-full object-cover" 
-                  style={{ filter: draft.avatar.includes('characters') ? 'grayscale(100%)' : 'none' }} 
                 />
               </div>
               <span className="font-display uppercase text-lg truncate w-full text-center" style={{ color: draft.color }}>{draft.name}</span>
@@ -491,7 +503,7 @@ export function EventSetup() {
             <div className="grid grid-cols-4 gap-4">
               {[1,2,3,4,5,6,7,8].map(num => (
                 <button key={num} onClick={() => selectGenericAvatar(num)} className="border-2 border-gray-600 hover:border-white p-2">
-                  <img src={`/assets/characters/${num}.png`} alt={`char-${num}`} className="w-full h-auto grayscale" />
+                  <img src={`/assets/characters/${num}.webp`} alt={`char-${num}`} className="w-full h-auto" />
                 </button>
               ))}
             </div>
