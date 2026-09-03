@@ -228,20 +228,6 @@ export function BattleLive() {
     }
   }, [data]);
 
-  // Early returns after all hooks
-  if (data === undefined) return (
-    <div className="flex items-center justify-center h-screen" style={{ backgroundColor: 'var(--color-background)' }}>
-      <p className="font-display text-2xl animate-pulse" style={{ color: 'var(--color-gray)' }}>CARREGANDO...</p>
-    </div>
-  );
-  if (!data || !data.event || !data.battle) return (
-    <div className="flex items-center justify-center h-screen" style={{ backgroundColor: 'var(--color-background)' }}>
-      <p className="font-display text-2xl" style={{ color: 'var(--color-red)' }}>BATALHA NÃO ENCONTRADA</p>
-    </div>
-  );
-
-  const { event, battle, mcA, mcB } = data;
-
   const stopPreview = () => {
     if (previewAudioRef.current) {
       previewAudioRef.current.pause();
@@ -260,6 +246,20 @@ export function BattleLive() {
       setBeatSearch('');
     }
   }, [showBeatPicker]);
+
+  // Early returns after all hooks
+  if (data === undefined) return (
+    <div className="flex items-center justify-center h-screen" style={{ backgroundColor: 'var(--color-background)' }}>
+      <p className="font-display text-2xl animate-pulse" style={{ color: 'var(--color-gray)' }}>CARREGANDO...</p>
+    </div>
+  );
+  if (!data || !data.event || !data.battle) return (
+    <div className="flex items-center justify-center h-screen" style={{ backgroundColor: 'var(--color-background)' }}>
+      <p className="font-display text-2xl" style={{ color: 'var(--color-red)' }}>BATALHA NÃO ENCONTRADA</p>
+    </div>
+  );
+
+  const { event, battle, mcA, mcB } = data;
 
   const togglePreview = (beat: Beat, e: React.MouseEvent) => {
     e.stopPropagation();
