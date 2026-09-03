@@ -48,8 +48,12 @@ export function BattleLive() {
   const [beatVolume, setBeatVolume] = useState(0.7);
   const [showBeatPicker, setShowBeatPicker] = useState(false);
   const [beatObjectUrl, setBeatObjectUrl] = useState<string | null>(null);
+  const [beatSearch, setBeatSearch] = useState('');
+  const [previewBeatId, setPreviewBeatId] = useState<string | null>(null);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const previewAudioRef = useRef<HTMLAudioElement | null>(null);
+  const previewObjectUrlRef = useRef<string | null>(null);
   const lastTimeRef = useRef<number>(0);
   const countdownIntervalRef = useRef<number | null>(null);
   const fadeIntervalRef = useRef<number | null>(null);
@@ -59,6 +63,13 @@ export function BattleLive() {
     return () => {
       if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
       if (audioCtxRef.current) audioCtxRef.current.close();
+      if (previewAudioRef.current) {
+        previewAudioRef.current.pause();
+        previewAudioRef.current = null;
+      }
+      if (previewObjectUrlRef.current) {
+        URL.revokeObjectURL(previewObjectUrlRef.current);
+      }
     };
   }, []);
 
@@ -231,8 +242,44 @@ export function BattleLive() {
 
   const { event, battle, mcA, mcB } = data;
 
-  // --- Beat handlers ---
+  const stopPreview = () => {
+    if (previewAudioRef.current) {
+      previewAudioRef.current.pause();
+      previewAudioRef.current = null;
+    }
+    if (previewObjectUrlRef.current) {
+      URL.revokeObjectURL(previewObjectUrlRef.current);
+      previewObjectUrlRef.current = null;
+    }
+    setPreviewBeatId(null);
+  };
+
+  useEffect(() => {
+    if (!showBeatPicker) {
+      stopPreview();
+      setBeatSearch('');
+    }
+  }, [showBeatPicker]);
+
+  const togglePreview = (beat: Beat, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (previewBeatId === beat.id) {
+      stopPreview();
+      return;
+    }
+    stopPreview();
+    
+    const url = URL.createObjectURL(beat.audioData);
+    previewObjectUrlRef.current = url;
+    const audio = new Audio(url);
+    audio.volume = beatVolume;
+    audio.play().catch(() => {});
+    previewAudioRef.current = audio;
+    setPreviewBeatId(beat.id);
+  };
+
   const selectBeat = (beat: Beat) => {
+    stopPreview();
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current = null;
@@ -863,32 +910,69 @@ export function BattleLive() {
               </button>
             </div>
 
+            {/* Search Bar */}
+            <div className="p-4 shrink-0" style={{ borderBottom: '2px solid var(--color-gray)' }}>
+              <input 
+                type="text" 
+                placeholder="BUSCAR BEAT..."
+                value={beatSearch}
+                onChange={e => setBeatSearch(e.target.value)}
+                className="w-full bg-transparent p-3 font-display text-xl uppercase outline-none transition-colors"
+                style={{
+                  border: '2px solid var(--color-gray)',
+                  color: 'var(--color-offwhite)'
+                }}
+                onFocus={e => e.target.style.borderColor = 'var(--color-acid)'}
+                onBlur={e => e.target.style.borderColor = 'var(--color-gray)'}
+              />
+            </div>
+
             {/* Beat list */}
             <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
-              {beats && beats.length > 0 ? beats.map(beat => (
-                <button
-                  key={beat.id}
-                  onClick={() => selectBeat(beat)}
-                  className="w-full text-left p-4 font-display text-xl uppercase transition-all flex justify-between items-center"
-                  style={{
-                    border: `2px solid ${selectedBeat?.id === beat.id ? 'var(--color-acid)' : 'var(--color-gray)'}`,
-                    color: selectedBeat?.id === beat.id ? 'var(--color-acid)' : 'var(--color-offwhite)',
-                    backgroundColor: selectedBeat?.id === beat.id ? 'rgba(245,230,0,0.05)' : 'transparent'
-                  }}
-                  onMouseEnter={e => {
-                    if (selectedBeat?.id !== beat.id) {
-                      (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-offwhite)';
-                    }
-                  }}
-                  onMouseLeave={e => {
-                    if (selectedBeat?.id !== beat.id) {
-                      (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-gray)';
-                    }
-                  }}
-                >
-                  <span className="truncate">{beat.name}</span>
-                  {selectedBeat?.id === beat.id && <span>✓</span>}
-                </button>
+              {beats && beats.length > 0 ? beats.filter(b => b.name.toLowerCase().includes(beatSearch.toLowerCase())).map(beat => (
+                <div key={beat.id} className="flex gap-2 w-full">
+                  <button
+                    onClick={(e) => togglePreview(beat, e)}
+                    className="p-4 font-display text-xl uppercase transition-all shrink-0 flex items-center justify-center"
+                    style={{
+                      border: `2px solid ${previewBeatId === beat.id ? 'var(--color-acid)' : 'var(--color-gray)'}`,
+                      color: previewBeatId === beat.id ? 'var(--color-acid)' : 'var(--color-offwhite)',
+                      backgroundColor: previewBeatId === beat.id ? 'rgba(245,230,0,0.05)' : 'transparent',
+                      width: '60px'
+                    }}
+                    onMouseEnter={e => {
+                      if (previewBeatId !== beat.id) (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-offwhite)';
+                    }}
+                    onMouseLeave={e => {
+                      if (previewBeatId !== beat.id) (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-gray)';
+                    }}
+                  >
+                    {previewBeatId === beat.id ? '⏸' : '▶'}
+                  </button>
+                  <button
+                    onClick={() => selectBeat(beat)}
+                    className="flex-1 text-left p-4 font-display text-xl uppercase transition-all flex justify-between items-center"
+                    style={{
+                      border: `2px solid ${selectedBeat?.id === beat.id ? 'var(--color-acid)' : 'var(--color-gray)'}`,
+                      color: selectedBeat?.id === beat.id ? 'var(--color-acid)' : 'var(--color-offwhite)',
+                      backgroundColor: selectedBeat?.id === beat.id ? 'rgba(245,230,0,0.05)' : 'transparent',
+                      overflow: 'hidden'
+                    }}
+                    onMouseEnter={e => {
+                      if (selectedBeat?.id !== beat.id) {
+                        (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-offwhite)';
+                      }
+                    }}
+                    onMouseLeave={e => {
+                      if (selectedBeat?.id !== beat.id) {
+                        (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-gray)';
+                      }
+                    }}
+                  >
+                    <span className="truncate pr-2">{beat.name}</span>
+                    {selectedBeat?.id === beat.id && <span className="shrink-0">✓</span>}
+                  </button>
+                </div>
               )) : (
                 <div className="text-center py-8" style={{ color: 'var(--color-gray)' }}>
                   <p className="font-display text-xl mb-4">NENHUM BEAT IMPORTADO</p>
