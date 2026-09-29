@@ -2,6 +2,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../core/db/db';
 import { advanceWinner } from '../core/engine/tournament';
+import { AudioManager } from '../core/engine/AudioManager';
 import { useState, useEffect, useRef } from 'react';
 import type { Beat } from '../core/types';
 
@@ -273,6 +274,7 @@ export function BattleLive() {
     previewObjectUrlRef.current = url;
     const audio = new Audio(url);
     audio.volume = beatVolume;
+    AudioManager.register(audio);
     audio.play().catch(() => {});
     previewAudioRef.current = audio;
     setPreviewBeatId(beat.id);
@@ -295,6 +297,7 @@ export function BattleLive() {
     const audio = new Audio(url);
     audio.volume = beatVolume;
     audio.loop = true;
+    AudioManager.register(audio);
     audioRef.current = audio;
   };
 
@@ -673,8 +676,9 @@ export function BattleLive() {
                     <div
                       className="font-display text-sm uppercase truncate p-2"
                       style={{ border: '1px solid var(--color-gray)', color: 'var(--color-acid)' }}
+                      title={selectedBeat.filename ? selectedBeat.filename.split('/').pop() : selectedBeat.name}
                     >
-                      {selectedBeat.name}
+                      {selectedBeat.filename ? selectedBeat.filename.split('/').pop() : selectedBeat.name}
                     </div>
 
                     {/* Beat controls */}
@@ -926,7 +930,12 @@ export function BattleLive() {
 
             {/* Beat list */}
             <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
-              {beats && beats.length > 0 ? beats.filter(b => b.name.toLowerCase().includes(beatSearch.toLowerCase())).map(beat => (
+              {beats && beats.length > 0 ? beats.filter(b => {
+                const searchName = b.filename ? b.filename.split('/').pop()! : b.name;
+                return searchName.toLowerCase().includes(beatSearch.toLowerCase());
+              }).map(beat => {
+                const displayName = beat.filename ? beat.filename.split('/').pop() : beat.name;
+                return (
                 <div key={beat.id} className="flex gap-2 w-full">
                   <button
                     onClick={(e) => togglePreview(beat, e)}
@@ -966,11 +975,11 @@ export function BattleLive() {
                       }
                     }}
                   >
-                    <span className="truncate pr-2">{beat.name}</span>
+                    <span className="truncate pr-2" title={displayName}>{displayName}</span>
                     {selectedBeat?.id === beat.id && <span className="shrink-0">✓</span>}
                   </button>
                 </div>
-              )) : (
+              )}) : (
                 <div className="text-center py-8" style={{ color: 'var(--color-gray)' }}>
                   <p className="font-display text-xl mb-4">NENHUM BEAT IMPORTADO</p>
                   <button

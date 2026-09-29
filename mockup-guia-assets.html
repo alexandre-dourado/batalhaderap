@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gabarito UI - Batalha de Rap</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Oswald', sans-serif; background-color: #111; color: white; margin: 0; padding: 0; }
+        .blueprint-zone {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            border-style: dashed;
+            border-width: 4px;
+            background-color: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(2px);
+            padding: 1rem;
+            transition: all 0.2s;
+            overflow: hidden;
+        }
+        .blueprint-zone:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        .bp-label {
+            background: #000;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+            white-space: nowrap;
+        }
+        .bp-id { font-size: 1.5rem; font-weight: bold; margin-bottom: 4px; }
+        .bp-icon { font-size: 2rem; margin-bottom: 8px; }
+
+        /* Cores Únicas para cada zona */
+        .z-bg { border-color: #FF3366; color: #FF3366; }
+        .z-stripes { border-color: #33FFCC; color: #33FFCC; }
+        .z-header { border-color: #FFCC00; color: #FFCC00; }
+        .z-btn-back { border-color: #CC33FF; color: #CC33FF; }
+        .z-avatar { border-color: #3366FF; color: #3366FF; border-radius: 50%; }
+        .z-badge { border-color: #FF6600; color: #FF6600; }
+        .z-spray { border-color: #FF00FF; color: #FF00FF; }
+        .z-timer { border-color: #00FF00; color: #00FF00; }
+        .z-beat { border-color: #00FFFF; color: #00FFFF; }
+        .z-actionbar { border-color: #FF99CC; color: #FF99CC; }
+        .z-btn-action { border-color: #99FF33; color: #99FF33; }
+        .z-btn-vence { border-color: #FF3333; color: #FF3333; }
+
+        /* Layout Grid da Batalha */
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+        .arena-container {
+            flex: 1;
+            display: flex;
+            flex-direction: row;
+            position: relative;
+            padding: 2rem;
+            gap: 2rem;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ZONA 1: Background Geral -->
+    <div class="blueprint-zone z-bg absolute inset-0 -z-10" style="padding: 20px; align-items: flex-start; justify-content: flex-start;">
+        <div class="bp-icon">🖼️</div>
+        <div class="bp-id">[1]</div>
+        <div class="bp-label">bg-app.webp (1920x1080px)</div>
+    </div>
+
+    <div class="app-container z-10">
+        
+        <!-- ZONA 2: Listras Topo -->
+        <div class="blueprint-zone z-stripes w-full h-8" style="border-bottom: none;">
+            <div class="bp-label flex gap-4 items-center">
+                <span>🚧</span> [2] deco-listras-topo.webp (Repeat-X, H: 40px)
+            </div>
+        </div>
+
+        <!-- ZONA 3: Header -->
+        <div class="blueprint-zone z-header w-full h-20 flex-row justify-between px-6">
+            <!-- ZONA 4: Botão Voltar -->
+            <div class="blueprint-zone z-btn-back w-16 h-16 rounded-lg p-0">
+                <div class="bp-id text-sm">[4]</div>
+                <div class="text-xs">btn-voltar<br>(64x64)</div>
+            </div>
+            
+            <div class="bp-label flex gap-4 items-center">
+                <span>🪧</span> [3] bg-header.webp (1920x80px)
+            </div>
+
+            <div class="w-16"></div> <!-- Spacer -->
+        </div>
+
+        <!-- ARENA CENTRAL -->
+        <div class="arena-container">
+            
+            <!-- ZONA 7: Spray Divisor (Atrás de tudo no centro) -->
+            <div class="blueprint-zone z-spray absolute top-0 bottom-0 left-1/2 transform -translate-x-1/2 w-64 -z-10">
+                <div class="bp-icon">💨</div>
+                <div class="bp-id">[7]</div>
+                <div class="bp-label">fx-spray-divisor.webp<br>(400x800px)</div>
+            </div>
+
+            <!-- CARD MC A -->
+            <div class="flex-1 flex flex-col items-center justify-center gap-4 relative">
+                <!-- ZONA 5: Moldura Avatar -->
+                <div class="blueprint-zone z-avatar w-64 h-64 relative">
+                    <div class="bp-icon">👤</div>
+                    <div class="bp-id">[5]</div>
+                    <div class="bp-label">frame-avatar-a.webp<br>(300x300px)</div>
+                    
+                    <!-- Avatar Falso dentro da moldura -->
+                    <div class="absolute inset-4 rounded-full border-2 border-white/20 bg-white/10 -z-10"></div>
+                </div>
+
+                <!-- ZONA 6: Badge Status -->
+                <div class="blueprint-zone z-badge w-48 h-12 rounded-full">
+                    <div class="bp-label text-xs flex gap-2"><span>🏷️</span> [6] badge-status.webp (120x40px)</div>
+                </div>
+            </div>
+
+            <!-- CENTRO (TIMER E BEAT) -->
+            <div class="w-80 flex flex-col items-center justify-center gap-8 z-10">
+                
+                <!-- ZONA 8: Timer Background -->
+                <div class="blueprint-zone z-timer w-full h-48 rounded-2xl relative">
+                    <div class="bp-icon">⏱️</div>
+                    <div class="bp-id">[8]</div>
+                    <div class="bp-label">bg-timer.webp<br>(300x200px)</div>
+                    <!-- Falso Timer -->
+                    <div class="absolute inset-0 flex items-center justify-center text-7xl font-bold opacity-30">00:45</div>
+                </div>
+
+                <!-- ZONA 9: Botão Toca Discos -->
+                <div class="blueprint-zone z-beat w-40 h-40 rounded-full">
+                    <div class="bp-icon">💿</div>
+                    <div class="bp-id">[9]</div>
+                    <div class="bp-label text-xs">btn-disco-beat.webp<br>(120x120px)</div>
+                </div>
+
+            </div>
+
+            <!-- CARD MC B -->
+            <div class="flex-1 flex flex-col items-center justify-center gap-4 relative">
+                <!-- ZONA 5: Moldura Avatar B -->
+                <div class="blueprint-zone z-avatar w-64 h-64 relative">
+                    <div class="bp-icon">👤</div>
+                    <div class="bp-id">[5]</div>
+                    <div class="bp-label">frame-avatar-b.webp<br>(300x300px)</div>
+                    <div class="absolute inset-4 rounded-full border-2 border-white/20 bg-white/10 -z-10"></div>
+                </div>
+
+                <!-- ZONA 6: Badge Status B -->
+                <div class="blueprint-zone z-badge w-48 h-12 rounded-full">
+                    <div class="bp-label text-xs flex gap-2"><span>🏷️</span> [6] badge-status.webp (120x40px)</div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ACTION BAR -->
+        <!-- ZONA 10: Fundo da Action Bar -->
+        <div class="blueprint-zone z-actionbar w-full h-40 p-4 border-b-0">
+            <div class="absolute top-2 left-4 bp-label text-xs"><span>🕹️</span> [10] bg-actionbar.webp (1920x120px)</div>
+            
+            <div class="w-full h-full flex flex-col gap-2 mt-4">
+                <!-- ZONA 11: Botões de Ação Genéricos -->
+                <div class="flex w-full gap-4 justify-center">
+                    <div class="blueprint-zone z-btn-action flex-1 h-12 rounded-lg">
+                        <div class="bp-label text-xs">[11] btn-action-base.webp (250x60px)</div>
+                    </div>
+                    <div class="blueprint-zone z-btn-action flex-1 h-12 rounded-lg">
+                        <div class="bp-label text-xs">[11] btn-action-hover.webp (Estado Hover)</div>
+                    </div>
+                    <div class="blueprint-zone z-btn-action flex-1 h-12 rounded-lg">
+                        <div class="bp-label text-xs">[11] btn-action-base.webp</div>
+                    </div>
+                </div>
+
+                <!-- ZONA 12: Botões Vencedor -->
+                <div class="flex w-full gap-4 justify-center mt-2">
+                    <div class="blueprint-zone z-btn-vence w-48 h-12 rounded-lg">
+                        <div class="bp-label text-xs">🏆 [12] btn-vence.webp (150x60)</div>
+                    </div>
+                    <div class="blueprint-zone z-btn-vence w-48 h-12 rounded-lg">
+                        <div class="bp-label text-xs">🏆 [12] btn-vence.webp (150x60)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ZONA 2: Listras Rodapé -->
+        <div class="blueprint-zone z-stripes w-full h-8" style="border-top: none;">
+            <div class="bp-label flex gap-4 items-center">
+                <span>🚧</span> [2] deco-listras-rodape.webp (Repeat-X, H: 40px)
+            </div>
+        </div>
+
+    </div>
+</body>
+</html>

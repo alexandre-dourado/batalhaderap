@@ -79,6 +79,37 @@
         "EventSetup.tsx reescrito para incluir seletor de tempo do round e toggle para modo Manual",
         "Criação de interface para parear os MCs manualmente, arrastando-os para os slots correspondentes antes de iniciar o campeonato"
       ]
+    },
+    {
+      "date": "2026-09-19",
+      "session": "Fase 4 - Migração GitHub Pages e Dashboard",
+      "changes": [
+        "Configurado vite.config.ts base para GitHub Pages (/batalhaderap/)",
+        "Criado Github Actions workflow (deploy.yml) para build e deploy",
+        "Atualizado OpenGraph metadata para apontar para alexandredourado.com/batalhaderap e arquivo convertido para webp",
+        "Criado script Python e gerado webp otimizado para o og-image",
+        "Criado dashboard vercel-hub.html contendo links para os 20 projetos hospedados no Vercel para limpeza manual"
+      ]
+    },
+    {
+      "date": "2026-09-29",
+      "session": "Fase 5 - Unificação Vercel e Limpeza de Beats",
+      "changes": [
+        "Limpeza do projeto legado (batalha) e implantação de redirecionamento 301 via vercel.json para a versão atual",
+        "Move de 32 beats essenciais para a pasta raiz beats/",
+        "Geração de um novo convert_beats.bat e arquivos opus exclusivos aos 32 selecionados",
+        "Atualização do seedBeats.ts para rotacionar a chave (v8) listando os novos beats",
+        "Nenhum outro arquivo excluído do repositório, mantendo o histórico de trabalho."
+      ]
+    },
+    {
+      "date": "2026-09-29",
+      "session": "Fase 6 - Fix Deployments e Beats Vercel/GitHub Pages",
+      "changes": [
+        "vite.config.ts: Configurado base path dinâmico para suportar Vercel (/) e GitHub Pages (/batalhaderap/) simultaneamente.",
+        "deploy.yml: Adicionado VITE_BASE_PATH para build correto no GitHub Pages.",
+        "Comitado seedBeats.ts (v8) e os 32 arquivos .opus que faltavam no repositório."
+      ]
     }
   ]
 }

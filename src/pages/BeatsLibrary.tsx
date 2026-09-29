@@ -2,6 +2,7 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../core/db/db';
 import { useNavigate } from 'react-router-dom';
+import '../core/engine/AudioManager'; // Initialize the DOM listener
 
 export function BeatsLibrary() {
   const navigate = useNavigate();
@@ -53,10 +54,11 @@ export function BeatsLibrary() {
       <div className="flex flex-col gap-4">
         {beats?.map(beat => {
           const audioUrl = URL.createObjectURL(beat.audioData);
+          const displayName = beat.filename ? beat.filename.split('/').pop() : beat.name;
           
           return (
             <div key={beat.id} className="border-2 border-offwhite p-4 flex flex-col md:flex-row justify-between items-center gap-4">
-              <div className="font-display text-xl uppercase truncate flex-1 w-full">{beat.name}</div>
+              <div className="font-display text-xl uppercase truncate flex-1 w-full" title={displayName}>{displayName}</div>
               
               <div className="flex items-center gap-4 w-full md:w-auto justify-end">
                 <audio 
